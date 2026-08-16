@@ -10,25 +10,23 @@
 </head>
 <body>
 <header class="topbar">
-  <div><div class="brand">🧩 一隅拼豆</div><div class="sub">MARD 色號・圖紙・庫存・作品</div></div>
+  <div><div class="brand">🧩 一隅拼豆</div></div>
   <button id="installBtn" class="ghost hidden">安裝 App</button>
 </header>
 
 <main>
 <section id="home" class="page active">
   <div class="hero">
-    <div><h1>今天想做什麼？</h1><p>把圖紙、色號與庫存放在同一個地方。</p></div>
+    <div><h1>今天想做什麼？</h1></div>
     <button class="primary" onclick="newPattern()">＋ 新增圖紙</button>
   </div>
   <div class="quick">
-    <div class="aiPickers">
-      <label class="primary filePicker">🖼️ 從相簿選圖
-        <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp,image/*">
-      </label>
-      <label class="ghost filePicker">📷 拍照
-        <input id="cameraInput" type="file" accept="image/*" capture="environment">
-      </label>
-    </div>
+    <label class="primary filePicker">🖼️ AI 從相簿選圖
+      <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp,image/*">
+    </label>
+    <label class="ghost filePicker">📷 AI 拍照
+      <input id="cameraInput" type="file" accept="image/*" capture="environment">
+    </label>
     <button onclick="newPattern()">🎨 自己繪圖</button>
     <button onclick="nav('inventory')">📦 我的庫存</button>
     <button onclick="nav('works')">🖼️ 我的作品</button>
@@ -38,7 +36,7 @@
 </section>
 
 <section id="editor" class="page">
-  <div class="sectionTitle"><h2>圖紙編輯器</h2><button class="ghost" onclick="nav('home')">完成</button></div>
+  <div class="sectionTitle"><h2>圖紙編輯器</h2><button class="ghost" onclick="savePattern()">完成</button></div>
   <div class="editorTools"><button class="ghost toolBtn" onclick="zoomGrid(-1)">－</button><button class="ghost toolBtn" onclick="zoomGrid(1)">＋</button><button class="ghost toolBtn" onclick="setEraser()">🧽 橡皮擦</button><button class="ghost toolBtn" onclick="clearGrid()">🗑 清除</button>
     <input id="patternName" placeholder="圖紙名稱" value="我的新作品">
     <select id="gridSize" onchange="buildGrid()">
@@ -48,7 +46,7 @@
     </select>
     <button class="ghost" onclick="undo()">↶</button><button class="ghost" onclick="redo()">↷</button>
   </div>
-  <div class="paletteRow" id="palette"></div>
+  <input class="search paletteSearch" id="paletteSearch" placeholder="搜尋 MARD 色號…" oninput="renderPalette()"><div id="selectedLabel" class="muted"></div><div class="paletteRow" id="palette"></div>
   <div class="gridWrap"><div id="grid" class="grid"></div></div>
   <div class="editorBottom">
     <div><b id="totalBeads">0</b> 顆 · <span id="colorKinds">0</span> 色</div>
@@ -86,20 +84,8 @@
 </section>
 
 <section id="colors" class="page">
-  <div class="sectionTitle"><h2>🎨 MARD 色號</h2><button class="primary small" onclick="addColor()">＋ 新色號</button></div>
-  <p class="note">色號資料庫可自行編輯。以下內建色號是示範資料，不代表官方完整 MARD 色卡；正式版可匯入你的 MARD 色號表。</p>
+  <div class="sectionTitle"><h2>🎨 MARD 色號 <span id="colorCount"></span></h2><button class="primary small" onclick="addColor()">＋ 新色號</button></div><input class="search" id="colorSearch" placeholder="搜尋 MARD 色號…" oninput="renderColors()">
   <div id="colorList"></div>
-</section>
-
-<section class="card backupCard">
-  <div class="sectionTitle"><h2>💾 資料保存</h2></div>
-  <p class="muted">圖紙、庫存與作品會自動保存到這支手機的瀏覽器。建議定期備份。</p>
-  <div class="backupBtns">
-    <button class="primary" onclick="exportAppData()">⬇️ 備份我的資料</button>
-    <label class="ghost fileBtn">⬆️ 匯入備份<input type="file" accept=".json,application/json" onchange="importAppData(this.files[0])" hidden></label>
-    <button class="ghost dangerBtn" onclick="resetAppData()">🗑️ 清除全部資料</button>
-  </div>
-  <div id="saveStatus" class="saveStatus">自動保存：開啟</div>
 </section>
 </main>
 

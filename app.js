@@ -1,92 +1,38 @@
-
-/* ===== 一隅拼豆 1.3.1 persistence ===== */
-const STORE_KEY='yigu-bead-data-v2';
-const STORE_VERSION=2;
-let saveTimer=null;
-
-function appSnapshot(){
-  return {
-    version:STORE_VERSION,
-    savedAt:new Date().toISOString(),
-    current:window.current,
-    db:window.db,
-    history:[],
-    future:[]
-  };
-}
-function saveAll(reason='自動保存'){
-  try{
-    localStorage.setItem(STORE_KEY, JSON.stringify(appSnapshot()));
-    const el=document.getElementById('saveStatus');
-    if(el) el.textContent=`✓ 已保存 · ${new Date().toLocaleTimeString()} · ${reason}`;
-  }catch(err){
-    const el=document.getElementById('saveStatus');
-    if(el) el.textContent='⚠️ 保存失敗：瀏覽器儲存空間可能不足';
-    console.error(err);
-  }
-}
-function scheduleSave(reason='自動保存'){
-  clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>saveAll(reason),180);
-}
-function loadAll(){
-  try{
-    const raw=localStorage.getItem(STORE_KEY);
-    if(!raw)return false;
-    const data=JSON.parse(raw);
-    if(data?.db) window.db=data.db;
-    if(data?.current) window.current=data.current;
-    return true;
-  }catch(err){console.warn('loadAll failed',err);return false}
-}
-function exportAppData(){
-  saveAll('手動備份');
-  const payload=localStorage.getItem(STORE_KEY)||JSON.stringify(appSnapshot());
-  const blob=new Blob([payload],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`一隅拼豆_備份_${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-function importAppData(file){
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=()=>{
-    try{
-      const data=JSON.parse(reader.result);
-      if(!data || !data.db || !data.current) throw new Error('invalid backup');
-      if(!confirm('匯入會覆蓋目前的一隅拼豆資料，確定嗎？'))return;
-      localStorage.setItem(STORE_KEY,JSON.stringify(data));
-      window.db=data.db; window.current=data.current;
-      alert('資料已匯入。重新整理後即可使用。');
-      location.reload();
-    }catch(e){alert('這不是有效的一隅拼豆備份檔。')}
-  };
-  reader.readAsText(file);
-}
-function resetAppData(){
-  if(!confirm('確定要刪除所有圖紙、庫存與作品資料嗎？此操作無法復原。'))return;
-  localStorage.removeItem(STORE_KEY);
-  alert('已清除資料，頁面即將重新載入。');
-  location.reload();
-}
-window.addEventListener('beforeunload',()=>saveAll('離開前保存'));
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveAll('切到背景')});
-
 const KEY='beadStudioV3';
 const mardHex={"A":["FAF4C8","FFFFD5","FEFF8B","FBED56","F4D738","FEAC4C","FE8B4C","FFDA45","FF995B","F77C31","FFDD99","FE9F72","FFC365","FD543D","FFF365","FFFF9F","FFE36E","FEBE7D","FD7C72","FFD568","FFE395","F4F57D","E6C9B7","F7F8A2","FFD67D","FFC830"],"B":["E6EE31","63F347","9EF780","5DE035","35E352","65E2A6","3DAF80","1C9C4F","27523A","95D3C2","5D722A","166F41","CAEB7B","ADE946","2E5132","C5ED9C","9BB13A","E6EE49","24B88C","C2F0CC","156A6B","0B3C43","303A21","EEFCA5","4E846D","8D7A35","CCE1AF","9EE5B9","C5E254","E2FCB1","B0E792","9CAB5A"],"C":["E8FFE7","A9F9FC","A0E2FB","41CCFF","01ACEB","50AAF0","3677D2","0F54C0","324BCA","3EBCE2","28DDDE","1C334D","CDE8FF","D5FDFF","22C4C6","1557A8","04D1F6","1D3344","1887A2","176DAF","BEDDFF","67B4BE","C8E2FF","7CC4FF","A9E5E5","3CAED8","D3DFFA","BBCFED","34488E"],"D":["AEB4F2","858EDD","2F54AF","182A84","B843C5","AC7BDE","8854B3","E2D3FF","D5B9F8","361851","B9BAE1","DE9AD4","B90095","8B279B","2F1F90","E3E1EE","C4D4F6","A45EC7","D8C3D7","9C32B2","9A009B","333A95","EBDAFC","7786E5","494FC7","DFC2F8"],"E":["FDD3CC","FEC0DF","FFB7E7","E8649E","F551A2","F13D74","C63478","FFDBE9","E970CC","D33793","FCDDD2","F78FC3","B5006D","FFD1BA","F8C7C9","FFF3EB","FFE2EA","FFC7DB","FEBAD5","D8C7D1","BD9DA1","B785A1","937A8D","E1BCE8"],"F":["FD957B","FC3D46","F74941","FC283C","E7002F","943630","971937","BC0028","E2677A","8A4526","5A2121","FD4E6A","F35744","FFA9AD","D30022","FEC2A6","E69C79","D37C46","C1444A","CD9391","F7B4C6","FDC0D0","F67E66","E698AA","E54B4F"],"G":["FFE2CE","FFC4AA","F4C3A5","E1B383","EDB045","E99C17","9D5B3E","753832","E6B483","D98C39","E0C593","FFC890","B7714A","8D614C","FCF9E0","F2D9BA","78524B","FFE4CC","E07935","A94023","B88558"],"H":["FDFBFF","FEFFFF","B6B1BA","89858C","48464E","2F2B2F","000000","E7D6DB","EDEDED","EEE9EA","CECDD5","FFF5ED","F5ECD2","CFD7D3","98A6A8","1D1414","F1EDED","FFFDF0","F6EFE2","949FA3","FFFBE1","CACAD4","9A9D94"],"M":["BCC6B8","8AA386","697D80","E3D2BC","D0CCAA","B0A782","B4A497","B38281","A58767","C5B2BC","9F7594","644749","D19066","C77362","757D78"]};
 const mardColors=Object.entries(mardHex).flatMap(([series,vals])=>vals.map((hex,i)=>({id:`${series}${i+1}`,name:`${series}${i+1}`,hex:'#'+hex})));
 const old=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('beadStudioV2')||localStorage.getItem('beadStudioV1')||'null');
-const db=old?{colors:mardColors,inventory:mardColors.map(c=>({...c,stock:old.inventory?.find(x=>x.id===c.id)?.stock||0})),patterns:old.patterns||[],works:old.works||[]}:{colors:mardColors,inventory:mardColors.map(c=>({...c,stock:0})),patterns:[],works:[]};
-let current={name:'我的新作品',size:32,cells:[],selected:mardColors[0].id};let history=[],future=[];let scan={src:null,image:null,cells:[],size:32};
-const $=id=>document.getElementById(id);function persist(){localStorage.setItem(KEY,JSON.stringify(db))}function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+let db=old?{colors:mardColors,inventory:mardColors.map(c=>({...c,stock:old.inventory?.find(x=>x.id===c.id)?.stock||0})),patterns:old.patterns||[],works:old.works||[]}:{colors:mardColors,inventory:mardColors.map(c=>({...c,stock:0})),patterns:[],works:[]};
+let current={name:'我的新作品',size:32,cells:[],selected:mardColors[0].id};
+restoreYiguData();let history=[],future=[];let scan={src:null,image:null,cells:[],size:32};
+const $=id=>document.getElementById(id);function persist(){
+  localStorage.setItem(KEY,JSON.stringify(db));
+  try{localStorage.setItem('yigu-bead-data-v3',JSON.stringify({version:3,savedAt:new Date().toISOString(),db,current}))}catch(e){}
+}
+function restoreYiguData(){
+  try{
+    const raw=localStorage.getItem('yigu-bead-data-v3');
+    if(!raw)return;
+    const x=JSON.parse(raw);
+    if(x?.db?.colors?.length){
+      db=x.db;
+      // Always restore/merge the built-in 221 MARD colors so they never disappear.
+      const byId=new Map(mardColors.map(c=>[c.id,c]));
+      for(const c of (db.colors||[])) if(!byId.has(c.id)) byId.set(c.id,c);
+      db.colors=[...byId.values()];
+      const stockMap=new Map((db.inventory||[]).map(c=>[c.id,c]));
+      db.inventory=mardColors.map(c=>({...c,stock:Number(stockMap.get(c.id)?.stock||0)}));
+      for(const c of (db.colors||[]).filter(c=>!mardColors.some(m=>m.id===c.id))) db.inventory.push({...c,stock:Number(stockMap.get(c.id)?.stock||0)});
+    }
+    if(x?.current) current=x.current;
+  }catch(e){console.warn('restore failed',e)}
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function applyTheme(){const dark=localStorage.getItem('beadTheme')==='dark';document.documentElement.dataset.theme=dark?'dark':'light';$('themeBtn').textContent=dark?'☀️ 淺色':'☾ 深色'}function toggleTheme(){localStorage.setItem('beadTheme',localStorage.getItem('beadTheme')==='dark'?'light':'dark');applyTheme()}
-function nav(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='editor'){renderPalette();buildGrid()}if(id==='inventory')renderInventory();if(id==='colors')renderColors();if(id==='works')renderWorks()}
+function nav(id){persist();document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='home')renderHome();if(id==='editor'){renderPalette();buildGrid()}if(id==='inventory')renderInventory();if(id==='colors')renderColors();if(id==='works')renderWorks()}
 function renderHome(){$('patternCount').textContent=db.patterns.length+' 張';$('patternList').innerHTML=db.patterns.length?db.patterns.map((p,i)=>`<div class="card" onclick="loadPattern(${i})"><div class="thumb">🧩</div><b>${esc(p.name)}</b><div class="muted">${p.size}×${p.size} · ${countCells(p.cells)} 顆</div></div>`).join(''):`<div class="card"><div class="thumb">🎨</div><b>還沒有圖紙</b><div class="muted">建立第一張拼豆圖紙吧</div></div>`}
-function newPattern(){
-  scheduleSave('圖紙更新');current={name:'我的新作品',size:32,cells:[],selected:mardColors[0].id};history=[];future=[];$('patternName').value=current.name;$('gridSize').value='32';nav('editor')}
-function renderPalette(){const q=($('paletteSearch')?.value||'').toUpperCase();const list=db.colors.filter(c=>!q||c.id.includes(q));$('palette').innerHTML=list.map(c=>`<button class="swatch ${c.id===current.selected?'selected':''}" title="${c.id}" style="background:${c.hex}" onclick="selectColor('${c.id}')"></button>`).join('')||'<span class="muted">找不到色號</span>';const c=db.colors.find(x=>x.id===current.selected);$('selectedLabel').textContent=c?'目前：'+c.id:''}
+function newPattern(){current={name:'我的新作品',size:32,cells:[],selected:mardColors[0].id};history=[];future=[];$('patternName').value=current.name;$('gridSize').value='32';nav('editor')}
+function renderPalette(){const q=($('paletteSearch')?.value||'').toUpperCase();const list=db.colors.filter(c=>!q||c.id.includes(q));$('palette').innerHTML=list.map(c=>`<button class="swatch ${c.id===current.selected?'selected':''}" title="${c.id}" style="background:${c.hex}" onclick="selectColor('${c.id}')"></button>`).join('')||'<span class="muted">找不到色號</span>';const c=db.colors.find(x=>x.id===current.selected);if($('selectedLabel')) $('selectedLabel').textContent=c?'目前：'+c.id:''}
 function selectColor(id){current.selected=id;renderPalette()}
 function buildGrid(){const g=$('grid');g.style.gridTemplateColumns=`repeat(${current.size},18px)`;g.innerHTML='';for(let i=0;i<current.size*current.size;i++){const b=document.createElement('button');b.className='cell';const id=current.cells[i];if(id){const c=db.colors.find(x=>x.id===id);if(c)b.style.background=c.hex}b.onclick=()=>paint(i);g.appendChild(b)}updateStats()}
 function resizeGrid(){const n=+$('gridSize').value;history.push(JSON.stringify(current.cells));future=[];const a=new Array(n*n).fill(null);const min=Math.min(n,current.size);for(let r=0;r<min;r++)for(let c=0;c<min;c++)a[r*n+c]=current.cells[r*current.size+c]||null;current.size=n;current.cells=a;buildGrid()}
@@ -99,18 +45,23 @@ function zoomGrid(delta){
 }
 function setEraser(){eraser=!eraser;alert(eraser?'橡皮擦已開啟，再按一次可關閉。':'橡皮擦已關閉。');}
 function clearGrid(){
-  scheduleSave('圖紙更新');
   if(!confirm('確定要清除整張圖紙嗎？'))return;
   history.push(JSON.stringify(current.cells));future=[];current.cells=Array(current.size*current.size).fill(null);buildGrid();
 }
 function updateStats(){const counts={};current.cells.forEach(id=>{if(id)counts[id]=(counts[id]||0)+1});$('totalBeads').textContent=Object.values(counts).reduce((a,b)=>a+b,0);$('colorKinds').textContent=Object.keys(counts).length;$('usage').innerHTML=Object.entries(counts).map(([id,n])=>{const c=db.colors.find(x=>x.id===id),s=db.inventory.find(x=>x.id===id)?.stock||0;return `<div class="usageRow"><span class="dot" style="background:${c.hex}"></span><div class="grow"><b>${id}</b><div class="muted">需要 ${n} · 庫存 ${s}</div></div><b class="${s>=n?'ok':'danger'}">${s>=n?'✓ 足夠':'缺 '+(n-s)}</b></div>`}).join('')||'<div class="muted">開始上色後會顯示用量。</div>'}
 function savePattern(){
-  scheduleSave('圖紙保存');current.name=$('patternName').value||'未命名圖紙';db.patterns.unshift({name:current.name,size:current.size,cells:[...current.cells],updated:new Date().toISOString()});persist();nav('home')}
-function loadPattern(i){const p=db.patterns[i];current={...p,selected:mardColors[0].id};history=[];future=[];$('patternName').value=p.name;$('gridSize').value=p.size;nav('editor')}
+  current.name=$('patternName').value||'未命名圖紙';
+  const item={name:current.name,size:current.size,cells:[...current.cells],updated:new Date().toISOString()};
+  const idx=current._patternIndex;
+  if(Number.isInteger(idx) && db.patterns[idx]) db.patterns[idx]=item;
+  else {db.patterns.unshift(item);current._patternIndex=0;}
+  persist();renderHome();nav('home');
+}
+function loadPattern(i){const p=db.patterns[i];current={...p,_patternIndex:i,selected:mardColors[0].id};history=[];future=[];$('patternName').value=p.name;$('gridSize').value=p.size;nav('editor')}
 function renderInventory(){const q=($('invSearch')?.value||'').toUpperCase();$('inventoryList').innerHTML=db.inventory.filter(x=>!q||x.id.includes(q)).map((x,i)=>`<div class="invRow"><span class="dot" style="background:${x.hex}"></span><div class="grow"><b>${x.id}</b></div><button class="ghost" onclick="changeStock(${i},-10)">−10</button><b class="stock">${x.stock}</b><button class="ghost" onclick="changeStock(${i},10)">＋10</button></div>`).join('')}
 function changeStock(i,n){db.inventory[i].stock=Math.max(0,db.inventory[i].stock+n);persist();renderInventory()}
 function addInventory(){const id=prompt('MARD 色號，例如 A1');if(!id)return;const c=db.colors.find(x=>x.id.toUpperCase()===id.toUpperCase());if(!c){alert('這不是內建的 MARD 221 色號。');return}const stock=+(prompt('目前庫存顆數','0')||0);const x=db.inventory.find(v=>v.id===c.id);x.stock=Math.max(0,stock);persist();renderInventory()}
-function renderColors(){const q=($('colorSearch')?.value||'').toUpperCase();const list=db.colors.filter(c=>!q||c.id.includes(q));$('colorCount').textContent=db.colors.length+' 色';$('colorList').innerHTML=list.map(c=>`<div class="colorRow"><span class="dot" style="background:${c.hex}"></span><div class="grow"><b>${c.id}</b><div class="muted">HEX ${c.hex}</div></div></div>`).join('')}
+function renderColors(){const q=($('colorSearch')?.value||'').toUpperCase();const list=db.colors.filter(c=>!q||c.id.includes(q));if($('colorCount')) $('colorCount').textContent=db.colors.length+' 色';$('colorList').innerHTML=list.map(c=>`<div class="colorRow"><span class="dot" style="background:${c.hex}"></span><div class="grow"><b>${c.id}</b><div class="muted">HEX ${c.hex}</div></div></div>`).join('')}
 function addWork(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.capture='environment';input.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{db.works.unshift({name:f.name,src:r.result,date:new Date().toISOString()});persist();renderWorks()};r.readAsDataURL(f)};input.click()}
 function renderWorks(){$('workList').innerHTML=db.works.length?db.works.map(w=>`<div class="card"><img src="${w.src}" style="width:100%;height:160px;object-fit:cover;border-radius:12px"><b>${esc(w.name)}</b><div class="muted">${new Date(w.date).toLocaleDateString()}</div></div>`).join(''):`<div class="card"><div class="thumb">📷</div><b>還沒有作品</b><div class="muted">上傳完成品照片即可保存。</div></div>`}
 function openScanner(){$('scanInput').value='';$('scanControls').classList.add('hidden');$('scanResult').classList.add('hidden');$('scanPreview').innerHTML='尚未選擇圖片';nav('scanner')}
@@ -222,7 +173,6 @@ async function analyzePatternImage(){
   document.getElementById('applyAI').classList.remove('hidden');
 }
 function applyAIResult(){
-  scheduleSave('圖紙更新');
   if(!aiResult)return;
   current={name:'AI 辨識圖紙',size:aiResult.size,cells:[...aiResult.cells],selected:db.colors[0]?.id};
   history=[];future=[];
@@ -245,17 +195,4 @@ document.getElementById('imageInput').addEventListener('change',e=>handlePattern
 document.getElementById('cameraInput').addEventListener('change',e=>handlePatternImage(e.target.files[0]));
 
 
-
-document.addEventListener('DOMContentLoaded',()=>{
-  const loaded=loadAll();
-  if(loaded){
-    try{
-      if(typeof renderInventory==='function') renderInventory();
-      if(typeof renderPatterns==='function') renderPatterns();
-      if(typeof buildGrid==='function') buildGrid();
-      if(typeof updateStats==='function') updateStats();
-    }catch(e){console.warn('UI restore',e)}
-  }
-});
-
-window.addEventListener('click',e=>{if(e.target.closest('button')) scheduleSave('操作後保存')});
+document.addEventListener('DOMContentLoaded',()=>{wireImagePickers();renderHome();renderColors();renderInventory();renderWorks();});
