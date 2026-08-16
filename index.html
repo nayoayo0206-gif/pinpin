@@ -21,12 +21,18 @@
     <button class="primary" onclick="newPattern()">＋ 新增圖紙</button>
   </div>
   <div class="quick">
-    <button onclick="choosePatternImage()">📷 AI 掃描圖紙</button>
+    <div class="aiPickers">
+      <label class="primary filePicker">🖼️ 從相簿選圖
+        <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp,image/*">
+      </label>
+      <label class="ghost filePicker">📷 拍照
+        <input id="cameraInput" type="file" accept="image/*" capture="environment">
+      </label>
+    </div>
     <button onclick="newPattern()">🎨 自己繪圖</button>
     <button onclick="nav('inventory')">📦 我的庫存</button>
     <button onclick="nav('works')">🖼️ 我的作品</button>
   </div>
-  <input id="imageInput" type="file" accept="image/*" hidden><input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
   <div class="sectionTitle"><h2>最近圖紙</h2><span id="patternCount"></span></div>
   <div id="patternList" class="cards"></div>
 </section>
