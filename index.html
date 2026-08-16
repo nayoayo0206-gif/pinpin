@@ -1,27 +1,109 @@
 <!doctype html>
-<html lang="zh-Hant"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#6c5ce7"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css"><title>拼豆工作室 1.2</title>
-</head><body>
-<header class="topbar"><div><div class="brand">🧩 拼豆工作室</div><div class="sub">MARD 221 色・AI 圖紙辨識・庫存</div></div><button id="themeBtn" class="ghost" onclick="toggleTheme()">☾ 深色</button></header>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#6c5ce7">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+<title>一隅拼豆</title>
+</head>
+<body>
+<header class="topbar">
+  <div><div class="brand">🧩 一隅拼豆</div><div class="sub">MARD 色號・圖紙・庫存・作品</div></div>
+  <button id="installBtn" class="ghost hidden">安裝 App</button>
+</header>
+
 <main>
-<section id="home" class="page active"><div class="hero"><div><h1>拼豆工作室 1.2</h1><p>把圖紙變成可編輯的 MARD 拼豆圖紙。</p></div><button class="primary" onclick="newPattern()">＋ 新增圖紙</button></div>
-<div class="quick"><button onclick="openScanner()">📷 AI 掃描圖紙</button><button onclick="newPattern()">🎨 自己繪圖</button><button onclick="nav('inventory')">📦 我的庫存</button><button onclick="nav('works')">🖼️ 我的作品</button></div>
-<div class="sectionTitle"><h2>最近圖紙</h2><span id="patternCount"></span></div><div id="patternList" class="cards"></div></section>
+<section id="home" class="page active">
+  <div class="hero">
+    <div><h1>今天想做什麼？</h1><p>把圖紙、色號與庫存放在同一個地方。</p></div>
+    <button class="primary" onclick="newPattern()">＋ 新增圖紙</button>
+  </div>
+  <div class="quick">
+    <button onclick="choosePatternImage()">📷 AI 掃描圖紙</button>
+    <button onclick="newPattern()">🎨 自己繪圖</button>
+    <button onclick="nav('inventory')">📦 我的庫存</button>
+    <button onclick="nav('works')">🖼️ 我的作品</button>
+  </div>
+  <input id="imageInput" type="file" accept="image/*" hidden><input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+  <div class="sectionTitle"><h2>最近圖紙</h2><span id="patternCount"></span></div>
+  <div id="patternList" class="cards"></div>
+</section>
 
-<section id="scanner" class="page"><div class="sectionTitle"><h2>📷 AI 圖紙辨識</h2><button class="ghost" onclick="nav('home')">取消</button></div>
-<div class="scanCard"><input id="scanInput" type="file" accept="image/*" capture="environment" onchange="loadScan(event)"><p class="muted">拍照或從相簿選圖。建議圖紙正面、光線均勻、盡量不要傾斜。</p><div id="scanPreview" class="scanPreview">尚未選擇圖片</div></div>
-<div id="scanControls" class="hidden"><div class="formGrid"><label>圖紙名稱<input id="scanName" value="AI 辨識圖紙"></label><label>格數<select id="scanSize"><option>16</option><option>24</option><option selected>32</option><option>48</option><option>64</option></select></label></div><div class="scanActions"><button class="ghost" onclick="suggestGrid()">🔎 自動建議格數</button><button class="primary" onclick="runScan()">✨ 開始辨識</button></div><div id="scanStatus" class="muted"></div></div>
-<div id="scanResult" class="hidden"><div class="sectionTitle"><h3>辨識結果</h3><span id="scanConfidence"></span></div><div id="scanGrid" class="gridWrap"></div><p class="note">辨識是以圖片每格平均色彩與 MARD 221 色做近似匹配。點任一格即可改色；這個版本不需要把圖片上傳到伺服器。</p><button class="primary wide" onclick="useScanResult()">套用到圖紙編輯器</button></div></section>
+<section id="editor" class="page">
+  <div class="sectionTitle"><h2>圖紙編輯器</h2><button class="ghost" onclick="nav('home')">完成</button></div>
+  <div class="editorTools"><button class="ghost toolBtn" onclick="zoomGrid(-1)">－</button><button class="ghost toolBtn" onclick="zoomGrid(1)">＋</button><button class="ghost toolBtn" onclick="setEraser()">🧽 橡皮擦</button><button class="ghost toolBtn" onclick="clearGrid()">🗑 清除</button>
+    <input id="patternName" placeholder="圖紙名稱" value="我的新作品">
+    <select id="gridSize" onchange="buildGrid()">
+      <option value="16">16 × 16</option><option value="24">24 × 24</option>
+      <option value="32" selected>32 × 32</option><option value="48">48 × 48</option>
+      <option value="64">64 × 64</option>
+    </select>
+    <button class="ghost" onclick="undo()">↶</button><button class="ghost" onclick="redo()">↷</button>
+  </div>
+  <div class="paletteRow" id="palette"></div>
+  <div class="gridWrap"><div id="grid" class="grid"></div></div>
+  <div class="editorBottom">
+    <div><b id="totalBeads">0</b> 顆 · <span id="colorKinds">0</span> 色</div>
+    <button class="primary" onclick="savePattern()">儲存圖紙</button>
+  </div>
+  
+<div id="aiPanel" class="aiPanel hidden">
+  <div class="aiHead">
+    <div><b>🧠 MARD 221 色辨識</b><div class="muted">圖片會在你的瀏覽器內分析</div></div>
+    <button class="ghost" onclick="closeAIPanel()">關閉</button>
+  </div>
+  <div class="aiPreviewWrap"><img id="aiPreview" alt="圖紙預覽"><div id="aiOverlay" class="aiOverlay"></div></div>
+  <div class="aiControls">
+    <label>格數 <select id="aiGridPreset"><option value="auto">自動</option><option>16</option><option>24</option><option>32</option><option>48</option><option>64</option></select></label>
+    <label>旋轉 <select id="aiRotation"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
+    <button class="primary" onclick="analyzePatternImage()">開始辨識</button>
+  </div>
+  <div id="aiStatus" class="aiStatus">請選擇圖片後開始。</div>
+  <div id="aiResult" class="usage"></div>
+  <button id="applyAI" class="primary wide hidden" onclick="applyAIResult()">套用到圖紙並可逐格修改</button>
+</div>
+<div class="sectionTitle"><h2>用量統計</h2></div>
+  <div id="usage" class="usage"></div>
+</section>
 
-<section id="editor" class="page"><div class="sectionTitle"><h2>圖紙編輯器</h2><button class="ghost" onclick="nav('home')">完成</button></div>
-<div class="editorTools"><input id="patternName" placeholder="圖紙名稱" value="我的新作品"><select id="gridSize" onchange="resizeGrid()"><option value="16">16 × 16</option><option value="24">24 × 24</option><option value="32" selected>32 × 32</option><option value="48">48 × 48</option><option value="64">64 × 64</option></select><button class="ghost" onclick="undo()">↶</button><button class="ghost" onclick="redo()">↷</button></div>
-<div class="paletteHead"><input id="paletteSearch" class="search" placeholder="搜尋 MARD 色號…" oninput="renderPalette()"><span id="selectedLabel"></span></div><div class="paletteRow" id="palette"></div><div class="gridWrap"><div id="grid" class="grid"></div></div>
-<div class="editorBottom"><div><b id="totalBeads">0</b> 顆 · <span id="colorKinds">0</span> 色</div><button class="primary" onclick="savePattern()">儲存圖紙</button></div><div class="sectionTitle"><h2>用量統計</h2></div><div id="usage" class="usage"></div></section>
+<section id="inventory" class="page">
+  <div class="sectionTitle"><h2>📦 MARD 庫存</h2><button class="primary small" onclick="addInventory()">＋ 新增</button></div>
+  <input class="search" id="invSearch" placeholder="搜尋 MARD 色號或顏色…" oninput="renderInventory()">
+  <div id="inventoryList"></div>
+</section>
 
-<section id="inventory" class="page"><div class="sectionTitle"><h2>📦 MARD 庫存</h2><button class="primary small" onclick="addInventory()">＋ 新增</button></div><input class="search" id="invSearch" placeholder="搜尋 MARD 色號…" oninput="renderInventory()"><div id="inventoryList"></div></section>
-<section id="works" class="page"><div class="sectionTitle"><h2>🖼️ 我的作品</h2><button class="primary small" onclick="addWork()">＋ 上傳</button></div><div id="workList" class="cards"></div></section>
-<section id="colors" class="page"><div class="sectionTitle"><h2>🎨 MARD 221 色</h2><span id="colorCount"></span></div><input class="search" id="colorSearch" placeholder="搜尋 A1、H7…" oninput="renderColors()"><div id="colorList"></div></section>
+<section id="works" class="page">
+  <div class="sectionTitle"><h2>🖼️ 我的作品</h2><button class="primary small" onclick="addWork()">＋ 上傳</button></div>
+  <div id="workList" class="cards"></div>
+</section>
+
+<section id="colors" class="page">
+  <div class="sectionTitle"><h2>🎨 MARD 色號</h2><button class="primary small" onclick="addColor()">＋ 新色號</button></div>
+  <p class="note">色號資料庫可自行編輯。以下內建色號是示範資料，不代表官方完整 MARD 色卡；正式版可匯入你的 MARD 色號表。</p>
+  <div id="colorList"></div>
+</section>
+
+<section class="card backupCard">
+  <div class="sectionTitle"><h2>💾 資料保存</h2></div>
+  <p class="muted">圖紙、庫存與作品會自動保存到這支手機的瀏覽器。建議定期備份。</p>
+  <div class="backupBtns">
+    <button class="primary" onclick="exportAppData()">⬇️ 備份我的資料</button>
+    <label class="ghost fileBtn">⬆️ 匯入備份<input type="file" accept=".json,application/json" onchange="importAppData(this.files[0])" hidden></label>
+    <button class="ghost dangerBtn" onclick="resetAppData()">🗑️ 清除全部資料</button>
+  </div>
+  <div id="saveStatus" class="saveStatus">自動保存：開啟</div>
+</section>
 </main>
-<nav class="nav"><button class="active" data-page="home" onclick="nav('home')">⌂<span>首頁</span></button><button data-page="scanner" onclick="nav('scanner')">📷<span>辨識</span></button><button data-page="editor" onclick="nav('editor')">▦<span>圖紙</span></button><button data-page="inventory" onclick="nav('inventory')">📦<span>庫存</span></button><button data-page="colors" onclick="nav('colors')">🎨<span>色號</span></button></nav>
-<script src="app.js"></script></body></html>
+
+<nav class="nav">
+  <button class="active" data-page="home" onclick="nav('home')">⌂<span>首頁</span></button>
+  <button data-page="editor" onclick="nav('editor')">▦<span>圖紙</span></button>
+  <button data-page="inventory" onclick="nav('inventory')">📦<span>庫存</span></button>
+  <button data-page="works" onclick="nav('works')">🖼️<span>作品</span></button>
+  <button data-page="colors" onclick="nav('colors')">🎨<span>色號</span></button>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>
